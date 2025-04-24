@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8"/>
+		<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-eval';style-src fonts.googleapis.com 'self' 'unsafe-inline';media-src *;img-src * 'self' data: https:;font-src 'self' fonts.gstatic.com fonts.googleapis.com; script-src  maps.googleapis.com 'self' 'unsafe-inline' 'unsafe-eval'"/>
+		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
+		<title>Tech Pricing Comparison</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
+		<style>					
+			*{
+			  font-family: "Nunito", sans-serif;
+			  margin:0px;
+			  padding:0px;
+			}
+			body{
+				background:#f0f4ff;
+				margin: 0;
+			}
+			
+			.fixed-parent{
+				background:#f0f4ff;
+				padding-bottom:8px;
+				position:fixed;
+				top: 0;
+				left: 0;
+				right: 0;
+				display: flex;
+				justify-content: center;
+				align-items: center;
+				z-index:999;
+			}
+			
+			.search-container {
+				width: 100%;
+				max-width: 400px;
+				text-align:center;
+				position:relative;
+			}
+			
+			h1{
+				margin: 8px 0px;
+				font-size: 1.7em;
+			}
+
+			.search-input {
+				width: 80%;
+				padding: 10px 20px;
+				padding-left: 45px;
+				border-radius: 30px;
+				border: 2px solid #ddd;
+				outline: none;
+				font-size: 16px;
+				transition: 0.3s;
+				box-sizing: border-box;
+			}
+
+			.search-input:focus {
+				width:100%;
+				border-color: #3498db;
+			}
+			
+			.search-input:focus+.search-icon{
+				left: 12px;
+			}
+
+			.search-icon {
+				color: #aaa;
+				font-size: 18px;
+				position: absolute;
+				bottom:-1px;
+				left: 52px;
+				transform: translateY(-40%);
+				transition:all 0.3s;
+			}
+
+			.search-input::placeholder {
+				color: #aaa;
+			}
+			
+			.container {
+				display: grid;
+				grid-template-columns: repeat(5, 1fr);
+				gap: 20px;
+				padding: 20px;
+			}
+			
+			.product-card {
+				background-color: white;
+				border-radius: 8px;
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+				overflow: hidden;
+				text-align: center;
+				padding: 20px;
+				transition: transform 0.3s ease-in-out;
+				position:relative;
+			}
+			.product-card:hover {
+				transform: scale(1.05);
+			}
+			.product-image {
+				width: 100%;
+				height: auto;
+				margin-top:10px;
+				border-radius: 8px;
+				object-fit: cover;
+			}
+			.product-title {
+				font-size: 1em;
+				margin: 10px 0;
+				color: #333;
+				text-decoration: none;
+				font-weight:bold;
+				transition: color 0.3s ease;
+			}
+			.product-title:hover {
+				color: #0b1b27;
+			}
+			
+			.extra-space{
+				height:10px;
+			}
+			
+			.product-description {
+				color: #666;
+				font-size: 1em;
+				padding:3px 0px;
+			}
+			
+			.product-price {
+				font-size: 1.2em;
+				color: #0b1b27;
+				font-weight: bold;
+			}
+			
+			.product-title, .product-description{
+				text-align:left;
+			}
+			
+			.floating-image {
+				width: 70px;
+				border-radius: 10px 0px 10px 0px;
+				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+				position:absolute;
+				top:0px;
+				left:0px;
+			}
+			
+			.loader {
+				position: fixed;
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+				width: 80px;
+				height: 80px;
+				border: 8px solid #f3f3f3;
+				border-top: 8px solid #3498db;
+				border-radius: 50%;
+				animation: spin 2s linear infinite;
+			}
+			
+			.summary-container{
+				width:100%;
+				background:#f0f4ff;
+				padding:0px 15px;
+				padding-top:10px;
+				justify-content: space-between;
+				box-sizing: border-box;
+				flex-wrap: wrap;
+				display: flex;
+				position:fixed;
+				z-index:9999999;
+			}
+			
+			.result-parent {
+				width: 60%;
+				margin-bottom:10px;
+				padding:0px;
+			}
+
+			.shop-parent, .sort-parent {
+				width: 20%;
+				margin-bottom:10px;
+				padding:0px;
+				opacity:0;
+			}
+			
+			 select {
+				width: 100%;
+				padding: 8px 20px;
+				font-size: 16px;
+				border-radius: 8px;
+				border: 2px solid #ddd;
+				appearance: none;
+				cursor: pointer;
+				transition: all 0.3s ease;
+			}
+
+			select:focus {
+				outline: none;
+				border-color: #007BFF;
+				background-color: #fff;
+			}
+
+			select option {
+				padding: 10px;
+				background-color: #fff;
+			}
+
+			.shop-parent, .sort-parent {
+				padding-right:8px;
+				box-sizing:border-box;
+				flex-direction: column;
+				align-items: flex-start;
+				position: relative;
+			}
+
+			.shop-parent::after, .sort-parent::after {
+				content: '▼';
+				font-size: 14px;
+				color: #555;
+				position: absolute;
+				bottom:14px;
+				right: 18px;
+				pointer-events: none;
+			}
+
+			select:hover {
+				border-color: #007BFF;
+			}
+
+			select:focus {
+				border-color: #007BFF;
+			}
+
+			select:focus + .shop-parent::after,
+			select:focus + .sort-parent::after {
+				color: #007BFF;
+			}
+			
+			option{
+				cursor:pointer;
+			}
+			
+			option[selected]{
+				color:rgb(13,40,70);
+			}
+			
+			.option-label{
+				font-size: 1.1em;
+				font-weight: bold;
+				margin-bottom: 5px;
+			}
+			
+			@keyframes fadeIn {
+				from { opacity: 0; }
+				to { opacity: 1; }
+			}
+
+			.fade-in {
+			  opacity: 0;
+			  animation: fadeIn 0.6s ease forwards;
+			}
+			
+			@keyframes spin {
+				0% {
+					transform: translate(-50%, -50%) rotate(0deg);
+				}
+				100% {
+					transform: translate(-50%, -50%) rotate(360deg);
+				}
+			}
+
+			
+			@media (max-width: 1023px) {
+				.container {
+					grid-template-columns: repeat(3, 1fr);
+				}
+			}
+			
+			@media (max-width:991px) {
+				.container {
+					grid-template-columns: repeat(1, 1fr);
+				}
+				
+				.result-parent, .shop-parent, .sort-parent {
+					width: 100%;
+					clear:both;
+				}
+			}
+			
+			
+		</style>
+	</head>
+	<body>
+		
+		<div class="fixed-parent">
+			<div class="search-container">
+				<h1>Compare Prices</h1>
+				<input type="text" class="search-input" placeholder="Search..." />
+				<span class="search-icon">&#128269;</span>
+			</div>
+		</div>
+		
+		<div class="summary-container">
+			<div class="result-parent">
+				 <label class="option-label">&nbsp;</label>
+				 <h2 id="result_no">&nbsp;</h2>
+			</div>
+			<div class="shop-parent">
+				<label class="option-label">Filter by Shop</label>
+				<select id="shop-option">
+					<option value="ALL" selected>ALL</option>
+					<option value="star_tech">Star Tech Ltd.</option>
+					<option value="village">Computer Village</option>
+					<option value="ryans">Ryans Computers</option>
+					<option value="smartbd">Smart Technologies (BD) Ltd.</option>
+					<option value="computer_mania">Computer Mania BD</option>
+					<option value="tech_land">Tech Land BD</option>
+				</select>
+			</div>
+			<div class="sort-parent">
+				<label class="option-label">Sort by</label>
+				<select id="sort-option">
+					<option value="default" selected>Default</option>
+					<option value="namea">Name Alphabetically</option>
+					<option value="pricea">Price Low to High</option>
+					<option value="priced">Price High to Low</option>
+				</select>
+			</div>
+		</div>
+		
+		<div class="container">
+			 
+		</div>
+		
+		<script src="/js/socket.io.min.js"></script>
+		<script>
+			
+			let container_ = null;
+			let summary_container_ = null;			
+			let debounceTimeout = null;
+			let old_query = "";
+			let product_items = [];
+			let _sortable_items = [];
+			const socket = io();
+			
+			const sources = {
+				"star_tech":"Star Tech Ltd.",
+				"tech_land":"Tech Land BD",
+				"ryans":"Ryans Computers",
+				"village":"Computer Village",
+				"smartbd":"Smart Technologies (BD) Ltd.",
+				"computer_mania":"Computer Mania BD"
+			};
+		
+			function formatPrice(price) {
+				if(price.toString()=="NaN" || isNaN(price)){
+					return "N/A";
+				}
+				if(price.toString().length<=3){
+					return price+"৳";
+				}
+				let numStr = price.toString();
+				let lastThree = numStr.slice(-3);
+				let remaining = numStr.slice(0, -3);
+				let formattedRemaining = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
+				return formattedRemaining + ',' + lastThree+"৳";
+			}
+			
+			function setProductHtml(product_items_, addDelay){
+				let productHtml = "";
+				let delay = 0;
+				let cardCounter = 0;
+				let fadeInClass = "";
+				
+				for(a_product of product_items_){
+					if(addDelay && cardCounter<20){
+						fadeInClass = "fade-in";
+					}else{
+						fadeInClass = "";
+					}
+					productHtml +=
+					`<div class="product-card ${fadeInClass}" style="animation-delay:${delay}s;" data-source="${a_product.source}">
+						<img src="/logo/${a_product.source}.jpg" class="floating-image" title="${sources[a_product.source]}">
+						<img src="${a_product.image}" alt="${a_product.title}" class="product-image">
+						<a href="${a_product.link}" class="product-title" target="_blank">${a_product.title}</a>
+						<p class="extra-space"></p>`;
+						
+						if(a_product.source=="tech_land"){
+							for(a_description of a_product.description[0].split("&nbsp;")){
+								productHtml += 
+								`<p class="product-description">${a_description}</p>`;
+							}
+						}else{
+							for(a_description of a_product.description){
+								productHtml += 
+								`<p class="product-description">${a_description}</p>`;
+							}
+						}										
+						
+						if(a_product.price!=null && a_product.price!=0 && a_product.price!=undefined){
+							try{
+								a_product.price = a_product.price.split(",").join("").split("৳").join("").trim();
+								productHtml += `<p class="product-price">${formatPrice(a_product.price)}</p></div>`;
+							}catch(e){
+								a_product.price = "N/A";
+								productHtml += `<p class="product-price">N/A</p></div>`;
+							}
+						}else{
+							a_product.price = "N/A";
+							productHtml += `<p class="product-price">N/A</p></div>`;
+						}
+					delay += 0.1;
+					cardCounter++;
+				}
+				container_.innerHTML = productHtml;
+			}
+			
+			
+			function processQuery(event_){
+				const query__ = event_.target.value.toLowerCase();
+				if (old_query.length!=0 && query__.trim()==old_query) {
+					return;
+				}
+				
+				container_.innerHTML = ``;
+				document.querySelector("#result_no").innerHTML = "";
+				document.querySelector(".shop-parent").style.display = "none";
+				document.querySelector(".sort-parent").style.display = "none";
+				if(debounceTimeout!=null){
+					clearTimeout(debounceTimeout);
+				}
+				
+				if (!query__.trim()) {
+					return;
+				}
+				
+				container_.innerHTML = `<div class="loader"></div>`;
+				
+				document.getElementById('shop-option').value = "ALL";
+				document.getElementById('sort-option').value = "default";
+				
+				debounceTimeout = setTimeout(() => {
+					old_query = query__;
+					
+					product_items = [];
+					
+					socket.emit("search", query__);
+					
+				}, 500);
+			}
+			
+			document.querySelector('.search-input').addEventListener('keyup', (event)=>{
+				processQuery(event);
+			});
+			
+			document.querySelector('.search-input').addEventListener('change', (event)=>{
+				processQuery(event);
+			});
+			
+			document.querySelector('.search-input').addEventListener('paste', (event)=>{
+				setTimeout(function(){
+					processQuery(event);
+				}, 50);
+			});
+			
+			socket.on("searchResults", (result) => {
+				console.log("Result Query: "+result.query);
+				console.log("Current Query: "+old_query);
+				console.log(result.items);
+				
+				if(result.query==old_query && result.items.length!=0){
+					
+					product_items.push(...result.items);
+					
+					setProductHtml(product_items);
+					
+					document.querySelector("#result_no").innerHTML = product_items.length+" results";
+					if(product_items.length>0){
+						document.querySelector(".shop-parent").style.display = "flex";
+						document.querySelector(".sort-parent").style.display = "flex";
+					}
+				}
+			});
+			
+			window.onload = function() {
+			  var fixedParentHeight = document.querySelector('.fixed-parent').offsetHeight-8;
+			  container_ = document.querySelector('.container');
+			  summary_container_ = document.querySelector('.summary-container');
+			  summary_container_.style.top = fixedParentHeight+ "px";
+			  container_.style.marginTop = (fixedParentHeight+summary_container_.offsetHeight+6)+"px";
+			  document.querySelector('.shop-parent').style.opacity = 1;
+			  document.querySelector('.shop-parent').style.display = "none";
+			  document.querySelector('.sort-parent').style.opacity = 1;
+			  document.querySelector('.sort-parent').style.display = "none";
+			};
+			
+			document.getElementById('shop-option').addEventListener('change', function(event) {
+				const selected_shop = event.target.value.trim();
+				_sortable_items = [...product_items];
+				if (event.target.value != "ALL"){
+					_sortable_items = _sortable_items.filter(product=>product.source==selected_shop);
+				}
+				setProductHtml(_sortable_items, true);
+				
+				document.querySelector("#result_no").innerHTML = (_sortable_items.length)+" result"+((_sortable_items.length==1)?"":"s");
+				document.getElementById('sort-option').value = "default";
+				
+				window.scrollTo(0, 0);
+			});
+			
+			document.getElementById('sort-option').addEventListener('change', function(event) {
+				const selected_sort = event.target.value.trim();
+				_sortable_items = [...product_items];
+				const shop_option_ = document.getElementById('shop-option').value;
+				if(shop_option_!="ALL"){
+					_sortable_items = _sortable_items.filter(product=>product.source==shop_option_);
+				}
+				switch(selected_sort){
+					case "namea":
+								_sortable_items.sort((a, b) => a.title.localeCompare(b.title));
+								break;									
+					case "pricea":
+								_sortable_items.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+								break;
+					case "priced":
+								_sortable_items.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+								break;
+					case "default":
+					default:
+								break;
+				}
+				setProductHtml(_sortable_items, true);
+				window.scrollTo(0, 0);
+			});
+			
+			
+		</script>
+	</body>
+</html>
