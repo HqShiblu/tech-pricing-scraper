@@ -467,9 +467,6 @@
 			});
 			
 			socket.on("searchResults", (result) => {
-				console.log("Result Query: "+result.query);
-				console.log("Current Query: "+old_query);
-				console.log(result.items);
 				
 				if(result.query==old_query && result.items.length!=0){
 					
@@ -523,10 +520,40 @@
 								_sortable_items.sort((a, b) => a.title.localeCompare(b.title));
 								break;									
 					case "pricea":
-								_sortable_items.sort((a, b) => parseFloat(a.price) - parseFloat(b.price));
+								_sortable_items.sort((a, b) => {
+									const priceA = parseFloat(a.price);
+									const priceB = parseFloat(b.price);
+
+									if (isNaN(priceA) && isNaN(priceB)){
+										return 0;
+									}
+									if (isNaN(priceA)){
+										return 1;
+									}
+									if (isNaN(priceB)){
+										return -1;
+									}
+
+									return priceA - priceB;
+								});
 								break;
 					case "priced":
-								_sortable_items.sort((a, b) => parseFloat(b.price) - parseFloat(a.price));
+								_sortable_items.sort((a, b) => {
+									const priceA = parseFloat(a.price);
+									const priceB = parseFloat(b.price);
+
+									if (isNaN(priceA) && isNaN(priceB)){
+										 return 0;
+									}
+									if (isNaN(priceA)){
+										return 1;
+									}
+									if (isNaN(priceB)){
+										return -1;
+									}
+
+									return priceB - priceA;
+								});
 								break;
 					case "default":
 					default:
