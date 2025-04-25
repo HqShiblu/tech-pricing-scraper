@@ -174,18 +174,72 @@
 			}
 			
 			.result-parent {
-				width: 60%;
+				width: 30%;
 				margin-bottom:10px;
 				padding:0px;
 			}
 
-			.shop-parent, .sort-parent {
+			.range-wrapper, .shop-parent, .sort-parent {
 				width: 20%;
 				margin-bottom:10px;
 				padding:0px;
 				opacity:0;
 			}
 			
+			.range-wrapper{
+				width: 30%;
+				flex-direction: column;
+			}
+
+			.slider {
+			  height: 30px;
+			  margin-top: 24px;
+			  padding-right:10px;
+			  position: relative;
+			}
+			
+			.slider-track {
+			  position: absolute;
+			  height: 6px;
+			  top: 0;
+			  transform: translateY(-50%);
+			  background: #80a6c7;
+			  width: 90%;
+			  border-radius: 3px;
+			  z-index: 1;
+			}
+
+			input[type="range"] {
+			  position: absolute;
+			  width: 90%;
+			  pointer-events: none;
+			  -webkit-appearance: none;
+			  background: transparent;
+			  z-index:99999999999;
+			}
+
+			input[type="range"]::-webkit-slider-thumb {
+			  pointer-events: all;
+			  width: 20px;
+			  height: 20px;
+			  background: #80a6c7;
+			  border-radius: 50%;
+			  cursor: pointer;
+			  -webkit-appearance: none;
+			  margin-top: -9px;
+			  box-shadow: 0 0 2px #000;
+			}
+
+			input[type="range"]::-moz-range-thumb {
+			  pointer-events: all;
+			  width: 20px;
+			  height: 20px;
+			  background: #80a6c7;
+			  border-radius: 50%;
+			  cursor: pointer;
+			  border: none;
+			}
+
 			 select {
 				width: 100%;
 				padding: 8px 20px;
@@ -221,7 +275,7 @@
 				font-size: 14px;
 				color: #555;
 				position: absolute;
-				bottom:14px;
+				bottom:26px;
 				right: 18px;
 				pointer-events: none;
 			}
@@ -284,9 +338,13 @@
 					grid-template-columns: repeat(1, 1fr);
 				}
 				
-				.result-parent, .shop-parent, .sort-parent {
+				.result-parent, .range-wrapper, .shop-parent, .sort-parent .shop-parent, .sort-parent {
 					width: 100%;
 					clear:both;
+				}
+				
+				.shop-parent::after, .sort-parent::after {
+					bottom:12px;
 				}
 			}
 			
@@ -307,6 +365,14 @@
 			<div class="result-parent">
 				 <label class="option-label">&nbsp;</label>
 				 <h2 id="result_no">&nbsp;</h2>
+			</div>
+			<div class="range-wrapper">
+			  <h3><span id="range-min">0</span> - <span id="range-max">0</span></h3>
+			  <div class="slider">
+				<div class="slider-track"></div>
+				<input type="range" id="min" min="0" max="1000" value="0" step="500"/>
+				<input type="range" id="max" min="0" max="1000" value="1000" step="500"/>
+			  </div>
 			</div>
 			<div class="shop-parent">
 				<label class="option-label">Filter by Shop</label>
@@ -344,6 +410,15 @@
 			let old_query = "";
 			let product_items = [];
 			let _sortable_items = [];
+			
+			const minSlider = document.getElementById("min");
+			const maxSlider = document.getElementById("max");
+			const minOutput = document.getElementById("range-min");
+			const maxOutput = document.getElementById("range-max");
+			const sliderTrack = document.querySelector(".slider-track");
+			const minGap = 500;
+			let sliderMaxValue = 0;
+			
 			const socket = io();
 			
 			const sources = {
@@ -427,6 +502,7 @@
 				
 				container_.innerHTML = ``;
 				document.querySelector("#result_no").innerHTML = "";
+				document.querySelector(".range-wrapper").style.display = "none";
 				document.querySelector(".shop-parent").style.display = "none";
 				document.querySelector(".sort-parent").style.display = "none";
 				if(debounceTimeout!=null){
@@ -474,8 +550,30 @@
 					
 					setProductHtml(product_items);
 					
+					sliderMaxValue = 0;
+					
+					for(a_product of product_items){
+						if(!isNaN(parseFloat(a_product.price)) && parseFloat(a_product.price)>sliderMaxValue && parseFloat(a_product.price)<2000000){
+							sliderMaxValue = a_product.price;
+						}
+					}
+					
+					minOutput.innerText = formatPrice(parseFloat(0));
+					maxOutput.innerText = formatPrice(parseFloat(sliderMaxValue));
+					
+					minSlider.min = 0;
+					minSlider.max = sliderMaxValue;
+					minSlider.value = 0;
+					
+					maxSlider.min = 0;
+					maxSlider.max = sliderMaxValue;
+					maxSlider.value = sliderMaxValue;
+					
+					fillTrack();
+					
 					document.querySelector("#result_no").innerHTML = product_items.length+" results";
 					if(product_items.length>0){
+						document.querySelector(".range-wrapper").style.display = "flex";
 						document.querySelector(".shop-parent").style.display = "flex";
 						document.querySelector(".sort-parent").style.display = "flex";
 					}
@@ -488,6 +586,8 @@
 			  summary_container_ = document.querySelector('.summary-container');
 			  summary_container_.style.top = fixedParentHeight+ "px";
 			  container_.style.marginTop = (fixedParentHeight+summary_container_.offsetHeight+6)+"px";
+			  document.querySelector('.range-wrapper').style.opacity = 1;
+			  document.querySelector('.range-wrapper').style.display = "none";
 			  document.querySelector('.shop-parent').style.opacity = 1;
 			  document.querySelector('.shop-parent').style.display = "none";
 			  document.querySelector('.sort-parent').style.opacity = 1;
@@ -497,6 +597,11 @@
 			document.getElementById('shop-option').addEventListener('change', function(event) {
 				const selected_shop = event.target.value.trim();
 				_sortable_items = [...product_items];
+				
+				if(!(minSlider.value==0 && maxSlider.value==sliderMaxValue)){
+					_sortable_items = _sortable_items.filter(product=>(!isNaN(parseFloat(product.price)) &&  parseFloat(product.price)>=minSlider.value && parseFloat(product.price)<=maxSlider.value));
+				}
+				
 				if (event.target.value != "ALL"){
 					_sortable_items = _sortable_items.filter(product=>product.source==selected_shop);
 				}
@@ -512,6 +617,11 @@
 				const selected_sort = event.target.value.trim();
 				_sortable_items = [...product_items];
 				const shop_option_ = document.getElementById('shop-option').value;
+				
+				if(!(minSlider.value==0 && maxSlider.value==sliderMaxValue)){
+					_sortable_items = _sortable_items.filter(product=>(!isNaN(parseFloat(product.price)) &&  parseFloat(product.price)>=minSlider.value && parseFloat(product.price)<=maxSlider.value));
+				}
+				
 				if(shop_option_!="ALL"){
 					_sortable_items = _sortable_items.filter(product=>product.source==shop_option_);
 				}
@@ -559,9 +669,48 @@
 					default:
 								break;
 				}
+				
 				setProductHtml(_sortable_items, true);
+				document.querySelector("#result_no").innerHTML = (_sortable_items.length)+" result"+((_sortable_items.length==1)?"":"s");
+				
 				window.scrollTo(0, 0);
 			});
+
+			function updateRange() {
+			  let minVal = parseInt(minSlider.value);
+			  let maxVal = parseInt(maxSlider.value);
+
+			  if (maxVal - minVal < minGap) {
+				if (event.target.id === "min") {
+				  minSlider.value = maxVal - minGap;
+				} else {
+				  maxSlider.value = minVal + minGap;
+				}
+				minVal = parseInt(minSlider.value);
+				maxVal = parseInt(maxSlider.value);
+			  }
+			  
+			  minOutput.textContent = formatPrice(minVal);
+			  maxOutput.textContent = formatPrice(maxVal);
+			  fillTrack();
+			  
+			  document.getElementById('sort-option').dispatchEvent(new Event("change"));
+			  
+			}
+
+			function fillTrack() {
+			  const minPercent = (minSlider.value / sliderMaxValue) * 100;
+			  const maxPercent = (maxSlider.value / sliderMaxValue) * 100;
+			  sliderTrack.style.background = `linear-gradient(to right, 
+				#ddd ${minPercent}%,
+				#80a6c7 ${minPercent}%,
+				#80a6c7 ${maxPercent}%,
+				#ddd ${maxPercent}%)`;
+			}
+
+			minSlider.addEventListener("input", updateRange);
+			maxSlider.addEventListener("input", updateRange);
+
 			
 			
 		</script>
