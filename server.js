@@ -8,7 +8,7 @@ const { Server } = require("socket.io");
 require('dotenv').config();
 
 const app = express();
-const port = process.env.SERVER_PORT||3000;
+const port = process.env.PORT||3000;
 
 const server = http.createServer(app);
 const io = new Server(server);
@@ -51,7 +51,7 @@ async function scrapeStartech(searchText, socket_){
         title,
         link,
         image,
-        price:price.split(".")[0],
+        price:price.split(".")[0].replace(/\D/g, ''),
         description,
 		source:"star_tech"
       });
@@ -92,7 +92,7 @@ async function scrapeTechland(searchText, socket_) {
         title,
         link,
         image,
-        price:price.split(".")[0],
+        price:price.split(".")[0].replace(/\D/g, ''),
         description,
 		source:"tech_land"
       });
@@ -134,7 +134,7 @@ async function scrapeRyans(searchText, socket_) {
         title: productTitle,
         link: productUrl,
         image: productImage,
-        price: productPrice.split(".")[0],
+        price: productPrice.split(".")[0].replace(/\D/g, ''),
         description: productDescription,
 		source:"ryans"
       });
@@ -181,7 +181,7 @@ async function scrapeComputerVillage(searchText, socket_) {
 		  price = "";
 	  }
 	
-      items.push({ title, link, image, price:price.split(".")[0], description:descriptionItems, source:"village" });
+      items.push({ title, link, image, price:price.split(".")[0].replace(/\D/g, ''), description:descriptionItems, source:"village" });
     });
 	
 	socket_.emit("searchResults", {
@@ -226,7 +226,7 @@ async function scrapeSmartTech(searchText, socket_) {
 		const link = $(el).find('h3.name a').attr('href');
 		const image = $(el).find('figure.image img').attr('data-src');
 		
-      items.push({ title, link, image, price, description:"", source:"smartbd" });
+      items.push({ title, link, image, price:price.replace(/\D/g, ''), description:"", source:"smartbd" });
     });
 	
 	socket_.emit("searchResults", {
@@ -271,7 +271,7 @@ async function scrapeCompterMania(searchText, socket_){
         title,
         link,
         image,
-        price:price,
+        price:price.replace(/\D/g, ''),
         description:"",
 		source:"computer_mania"
       });
@@ -312,7 +312,7 @@ async function scrapeTechland(searchText, socket_) {
         title,
         link,
         image,
-        price:price.split(".")[0],
+        price:price.split(".")[0].replace(/\D/g, ''),
         description,
 		source:"tech_land"
       });
