@@ -24,12 +24,12 @@ function renderView(viewName, data) {
     });
 }
 
-async function scrapeStartech(searchText, socket_){
+async function scrapeStartech(searchText, socket_, signal){
   const query = searchText;
   searchText = searchText.split(" ").join("+");
   const url = `https://www.startech.com.bd/product/search?&search=${searchText}&limit=90`;
   
-	fetch(url)
+	fetch(url, { signal })
   .then(res => res.text())
   .then(html => {
     const $ = cheerio.load(html);
@@ -69,12 +69,12 @@ async function scrapeStartech(searchText, socket_){
   });
 }
 
-async function scrapeTechland(searchText, socket_) {
+async function scrapeTechland(searchText, socket_, signal) {
 	const query = searchText;
 	searchText = searchText.split(" ").join("+");
 	const url = `https://www.techlandbd.com/index.php?route=product/search&sort=p.sort_order&order=ASC&search=${searchText}&limit=100`;	
 
-  fetch(url)
+  fetch(url, { signal })
   .then(res => res.text())
   .then(html => {
     const $ = cheerio.load(html);
@@ -109,12 +109,12 @@ async function scrapeTechland(searchText, socket_) {
   });
 }
 
-async function scrapeRyans(searchText, socket_) {
+async function scrapeRyans(searchText, socket_, signal) {
 	const query = searchText;
 	searchText = searchText.split(" ").join("%");
 	const url = `https://www.ryans.com/search?q=${searchText}&limit=102`;
 
-  fetch(url)
+  fetch(url, { signal })
   .then(res => res.text())
   .then(html => {
     const $ = cheerio.load(html);
@@ -150,12 +150,12 @@ async function scrapeRyans(searchText, socket_) {
   });
 }
 
-async function scrapeComputerVillage(searchText, socket_) {
+async function scrapeComputerVillage(searchText, socket_, signal) {
 	const query = searchText;
 	searchText = searchText.split(" ").join("%");
 	const url = `https://www.computervillage.com.bd/index.php?route=product/search&search=${searchText}&limit=100`;
 
- fetch(url)
+ fetch(url, { signal })
   .then(res => res.text())
   .then(html => {
     const $ = cheerio.load(html);
@@ -193,7 +193,7 @@ async function scrapeComputerVillage(searchText, socket_) {
   });
 }
 
-async function scrapeSmartTech(searchText, socket_) {
+async function scrapeSmartTech(searchText, socket_, signal) {
 	const query = searchText;
 	searchText = searchText.split(" ").join("+");
 	const url = `https://smartbd.com/?product_cat=&s=${searchText}&post_type=product`;
@@ -207,6 +207,7 @@ async function scrapeSmartTech(searchText, socket_) {
 			"product_cat":"",
 			"ppp":-1
 		},
+		signal: signal
 	})
   .then(res => res.text())
   .then(html => {
@@ -234,12 +235,12 @@ async function scrapeSmartTech(searchText, socket_) {
   });
 }
 
-async function scrapeCompterMania(searchText, socket_){
+async function scrapeCompterMania(searchText, socket_, signal){
   const query = searchText;
   searchText = searchText.split(" ").join("+");
   const url = `https://computermania.com.bd/shop/page/1/?s=${searchText}&post_type=product&per_page=100`;
 
-  fetch(url)
+  fetch(url, { signal })
   .then(res => res.text())
   .then(html => {
     const $ = cheerio.load(html);
@@ -280,12 +281,12 @@ async function scrapeCompterMania(searchText, socket_){
   });
 }
 
-async function scrapeTechland(searchText, socket_) {
+async function scrapeTechland(searchText, socket_, signal) {
 	const query = searchText;
 	searchText = searchText.split(" ").join("+");
 	const url = `https://www.pchouse.com.bd/index.php?route=product/search&search=${searchText}&limit=100`;	
 
-  fetch(url)
+  fetch(url, { signal })
   .then(res => res.text())
   .then(html => {
     const $ = cheerio.load(html);
@@ -353,17 +354,21 @@ res.json({
 
 io.on("connection", (socket) => {
 	
+	const controller = new AbortController();
+	const signal = controller.signal;
+	
 	socket.on("search", (searchText) => {
-		scrapeStartech(searchText, socket);
-		scrapeComputerVillage(searchText, socket);
-		scrapeTechland(searchText, socket);
-		scrapeCompterMania(searchText, socket);
-		scrapeSmartTech(searchText, socket);
-		scrapeRyans(searchText, socket);
+		scrapeStartech(searchText, socket, signal);
+		scrapeComputerVillage(searchText, socket, signal);
+		scrapeTechland(searchText, socket, signal);
+		scrapeCompterMania(searchText, socket, signal);
+		scrapeSmartTech(searchText, socket, signal);
+		scrapeRyans(searchText, socket, signal);
   });
 
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
+	controller.abort(); 
   });
 });
 
