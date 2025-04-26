@@ -81,11 +81,16 @@ async function scrapeTechland(searchText, socket_, signal) {
     const items = [];
 
     $(".product-layout").each((i, el) => {
+
       const title = $(el).find(".name a").text().trim();
       const link = $(el).find(".name a").attr("href");
       const image = $(el).find(".product-img img").attr("src");
       const price = $(el).find(".price .price-normal").text().trim() || $(el).find(".price .price-new").text().trim();
-      const description = [$(el).find(".description").text().trim()];
+      
+	  const description = [];
+      $(el).find(".description").children("li").each((i, li) => {
+        description.push($(li).text().trim());
+      });
 
       items.push({
         title,
@@ -95,6 +100,9 @@ async function scrapeTechland(searchText, socket_, signal) {
         description,
 		source:"tech_land"
       });
+	  
+	  console.log(items);
+	  
     });
 	
 	socket_.emit("searchResults", {
@@ -281,7 +289,7 @@ async function scrapeCompterMania(searchText, socket_, signal){
   });
 }
 
-async function scrapeTechland(searchText, socket_, signal) {
+async function scrapePCHouse(searchText, socket_, signal) {
 	const query = searchText;
 	searchText = searchText.split(" ").join("+");
 	const url = `https://www.pchouse.com.bd/index.php?route=product/search&search=${searchText}&limit=100`;	
@@ -305,7 +313,7 @@ async function scrapeTechland(searchText, socket_, signal) {
         image,
         price:price.split(".")[0].replace(/\D/g, ''),
         description,
-		source:"tech_land"
+		source:"pc_house"
       });
     });
 	
@@ -364,6 +372,7 @@ io.on("connection", (socket) => {
 		scrapeCompterMania(searchText, socket, signal);
 		scrapeSmartTech(searchText, socket, signal);
 		scrapeRyans(searchText, socket, signal);
+		scrapePCHouse(searchText, socket, signal);
   });
 
   socket.on("disconnect", () => {
