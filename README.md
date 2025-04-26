@@ -1,5 +1,5 @@
 # Tech Pricing Scraper
-
+Available at [Koyeb](https://pricingscraper.koyeb.app)
 
 ## Getting started
 
@@ -13,5 +13,7 @@ Then run the project locally with
 ```
 npm run devStart
 ```
-
 You need only one environment variable named PORT, by default the port is 3000.
+
+You can check it live in [Koyeb](https://pricingscraper.koyeb.app)
+
