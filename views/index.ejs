@@ -29,7 +29,7 @@
 				display: flex;
 				justify-content: center;
 				align-items: center;
-				z-index:999;
+				z-index:9999999999;
 			}
 			
 			.search-container {
@@ -40,8 +40,8 @@
 			}
 			
 			h1{
-				margin: 8px 0px;
-				font-size: 1.7em;
+				font-size: 1.6em;
+				margin: 4px 0px;
 			}
 
 			.search-input {
@@ -129,8 +129,8 @@
 			}
 			
 			.product-price {
-				font-size: 1.2em;
 				color: #0b1b27;
+				font-size: 1.2em;
 				font-weight: bold;
 			}
 			
@@ -334,18 +334,89 @@
 			}
 			
 			@media (max-width:991px) {
-				.container {
-					grid-template-columns: repeat(1, 1fr);
+				h1{
+					font-size: 1.2em;
+					margin: 2px 0px;
 				}
 				
-				.result-parent, .range-wrapper, .shop-parent, .sort-parent .shop-parent, .sort-parent {
+				.search-input:focus{
+					width:90%;
+				}
+				
+				.search-input:focus+.search-icon{
+					left: 34px;
+				}
+				
+				#result_no{
+					font-size: 1.3em;
+					text-align: center;
+					margin-top:-8px;
+				}
+				
+				.container {
+					grid-template-columns: repeat(2, 1fr);
+				}
+				
+				.search-input{
+					padding:6px 20px;
+					padding-left:45px;
+				}
+				
+				.search-icon {
+					transform: translateY(-35%);
+				}
+				
+				.summary-container{
+					padding-bottom: 8px;
+					box-shadow: 0px 2px 10px 0px #abc9e1;
+				}
+				
+				.result-label{
+					display:none;
+				}
+				
+				.result-parent {
+					margin-bottom: 0px;
+				}
+				
+				.slider{
+					height:20px;
+					margin-top:10px;
+				}
+				
+				.shop-parent, .sort-parent{
+					padding:0px 4px;
+				}
+				
+				.range-wrapper, .shop-parent, .sort-parent{
+					margin-bottom:0px;
+				}
+				
+				.result-parent, .range-wrapper, .shop-parent, .sort-parent {
 					width: 100%;
 					clear:both;
+				}
+				
+				.shop-parent, .sort-parent{
+					width:50%
 				}
 				
 				.shop-parent::after, .sort-parent::after {
 					bottom:12px;
 				}
+				
+				.product-title {
+					font-size: 0.94em;
+				}
+				
+				.product-description {
+					font-size: 0.9em;
+				}
+				
+				.product-price {
+					font-size: 1.12em;
+				}
+				
 			}
 			
 			
@@ -363,7 +434,7 @@
 		
 		<div class="summary-container">
 			<div class="result-parent">
-				 <label class="option-label">&nbsp;</label>
+				 <label class="option-label result-label">&nbsp;</label>
 				 <h2 id="result_no">&nbsp;</h2>
 			</div>
 			<div class="range-wrapper">
@@ -463,16 +534,9 @@
 						<a href="${a_product.link}" class="product-title" target="_blank">${a_product.title}</a>
 						<p class="extra-space"></p>`;
 						
-						if(a_product.source=="tech_land"){
-							for(a_description of a_product.description[0].split("&nbsp;")){
-								productHtml += 
-								`<p class="product-description">${a_description}</p>`;
-							}
-						}else{
-							for(a_description of a_product.description){
-								productHtml += 
-								`<p class="product-description">${a_description}</p>`;
-							}
+						for(a_description of a_product.description){
+							productHtml += 
+							`<p class="product-description">${a_description}</p>`;
 						}										
 						
 						if(a_product.price!=null && a_product.price!=0 && a_product.price!=undefined){
@@ -585,7 +649,7 @@
 			  container_ = document.querySelector('.container');
 			  summary_container_ = document.querySelector('.summary-container');
 			  summary_container_.style.top = fixedParentHeight+ "px";
-			  container_.style.marginTop = (fixedParentHeight+summary_container_.offsetHeight+6)+"px";
+			  container_.style.marginTop = (fixedParentHeight+summary_container_.offsetHeight)+"px";
 			  document.querySelector('.range-wrapper').style.opacity = 1;
 			  document.querySelector('.range-wrapper').style.display = "none";
 			  document.querySelector('.shop-parent').style.opacity = 1;
