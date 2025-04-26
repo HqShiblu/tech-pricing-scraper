@@ -28,13 +28,13 @@ async function scrapeStartech(searchText, socket_){
   const query = searchText;
   searchText = searchText.split(" ").join("+");
   const url = `https://www.startech.com.bd/product/search?&search=${searchText}&limit=90`;
-
-  try {
-    const res = await fetch(url);
-    const html = await res.text();
-
+  
+	fetch(url)
+  .then(res => res.text())
+  .then(html => {
     const $ = cheerio.load(html);
     const items = [];
+
 
     $(".p-item").each((i, el) => {
       const title = $(el).find(".p-item-name a").text().trim();
@@ -62,11 +62,11 @@ async function scrapeStartech(searchText, socket_){
 	});
 
     return items;
-
-  } catch (err) {
-    console.error("Scraping failed:", err);
-    return [];
-  }
+	
+  })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
 }
 
 async function scrapeTechland(searchText, socket_) {
@@ -74,10 +74,9 @@ async function scrapeTechland(searchText, socket_) {
 	searchText = searchText.split(" ").join("+");
 	const url = `https://www.techlandbd.com/index.php?route=product/search&sort=p.sort_order&order=ASC&search=${searchText}&limit=100`;	
 
-  try {
-    const res = await fetch(url);
-    const html = await res.text();
-
+  fetch(url)
+  .then(res => res.text())
+  .then(html => {
     const $ = cheerio.load(html);
     const items = [];
 
@@ -104,10 +103,10 @@ async function scrapeTechland(searchText, socket_) {
 	
     return items;
 
-  } catch (err) {
-    console.error("Scraping failed:", err);
-    return [];
-  }
+   })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
 }
 
 async function scrapeRyans(searchText, socket_) {
@@ -115,10 +114,9 @@ async function scrapeRyans(searchText, socket_) {
 	searchText = searchText.split(" ").join("%");
 	const url = `https://www.ryans.com/search?q=${searchText}&limit=102`;
 
-  try {
-    const res = await fetch(url);
-    const html = await res.text();
-
+  fetch(url)
+  .then(res => res.text())
+  .then(html => {
     const $ = cheerio.load(html);
     const items = [];
 
@@ -146,10 +144,10 @@ async function scrapeRyans(searchText, socket_) {
 
     return items;
 
-  } catch (err) {
-    console.error("Scraping failed:", err);
-    return [];
-  }
+  })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
 }
 
 async function scrapeComputerVillage(searchText, socket_) {
@@ -157,10 +155,9 @@ async function scrapeComputerVillage(searchText, socket_) {
 	searchText = searchText.split(" ").join("%");
 	const url = `https://www.computervillage.com.bd/index.php?route=product/search&search=${searchText}&limit=100`;
 
-  try {
-    const res = await fetch(url);
-    const html = await res.text();
-
+ fetch(url)
+  .then(res => res.text())
+  .then(html => {
     const $ = cheerio.load(html);
     const items = [];
 	
@@ -190,10 +187,10 @@ async function scrapeComputerVillage(searchText, socket_) {
 
     return items;
 
-  } catch (err) {
-    console.error("Scraping failed:", err);
-    return [];
-  }
+   })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
 }
 
 async function scrapeSmartTech(searchText, socket_) {
@@ -201,9 +198,7 @@ async function scrapeSmartTech(searchText, socket_) {
 	searchText = searchText.split(" ").join("+");
 	const url = `https://smartbd.com/?product_cat=&s=${searchText}&post_type=product`;
 
-  try {
-	
-	const response = await fetch(url, {
+  fetch(url, {
 		method: 'POST',
 		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
 		body: {
@@ -212,13 +207,11 @@ async function scrapeSmartTech(searchText, socket_) {
 			"product_cat":"",
 			"ppp":-1
 		},
-	});
-	const html = await response.text();	
-	
+	})
+  .then(res => res.text())
+  .then(html => {
     const $ = cheerio.load(html);
-	
     const items = [];
-	
 	
 	$('.product-block.grid').each((i, el) => {
 		const title = $(el).find('h3.name a').text().trim();
@@ -234,11 +227,11 @@ async function scrapeSmartTech(searchText, socket_) {
 	});
 
     return items;
-
-  } catch (err) {
-    console.error("Scraping failed:", err);
-    return [];
-  }
+  
+   })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
 }
 
 async function scrapeCompterMania(searchText, socket_){
@@ -246,12 +239,10 @@ async function scrapeCompterMania(searchText, socket_){
   searchText = searchText.split(" ").join("+");
   const url = `https://computermania.com.bd/shop/page/1/?s=${searchText}&post_type=product&per_page=100`;
 
-  try {
-    const res = await fetch(url);
-    const html = await res.text();
-
+  fetch(url)
+  .then(res => res.text())
+  .then(html => {
     const $ = cheerio.load(html);
-	
     const items = [];
 	
 	$('.product-wrapper').each((index, element) => {
@@ -283,10 +274,10 @@ async function scrapeCompterMania(searchText, socket_){
 
     return items;
 
-  } catch (err) {
-    console.error("Scraping failed:", err);
-    return [];
-  }
+   })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
 }
 
 async function scrapeTechland(searchText, socket_) {
@@ -294,10 +285,9 @@ async function scrapeTechland(searchText, socket_) {
 	searchText = searchText.split(" ").join("+");
 	const url = `https://www.pchouse.com.bd/index.php?route=product/search&search=${searchText}&limit=100`;	
 
-  try {
-    const res = await fetch(url);
-    const html = await res.text();
-
+  fetch(url)
+  .then(res => res.text())
+  .then(html => {
     const $ = cheerio.load(html);
     const items = [];
 
@@ -323,11 +313,11 @@ async function scrapeTechland(searchText, socket_) {
 	});
 	
     return items;
-
-  } catch (err) {
-    console.error("Scraping failed:", err);
-    return [];
-  }
+	
+	})
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
 }
 
 
