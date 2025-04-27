@@ -100,9 +100,7 @@ async function scrapeTechland(searchText, socket_, signal) {
         description,
 		source:"tech_land"
       });
-	  
-	  console.log(items);
-	  
+	  	  
     });
 	
 	socket_.emit("searchResults", {
@@ -119,7 +117,7 @@ async function scrapeTechland(searchText, socket_, signal) {
 
 async function scrapeRyans(searchText, socket_, signal) {
 	const query = searchText;
-	searchText = searchText.split(" ").join("%");
+	searchText = searchText.split(" ").join("%20");
 	const url = `https://www.ryans.com/search?q=${searchText}&limit=102`;
 
   fetch(url, { signal })
@@ -160,7 +158,7 @@ async function scrapeRyans(searchText, socket_, signal) {
 
 async function scrapeComputerVillage(searchText, socket_, signal) {
 	const query = searchText;
-	searchText = searchText.split(" ").join("%");
+	searchText = searchText.split(" ").join("%20");
 	const url = `https://www.computervillage.com.bd/index.php?route=product/search&search=${searchText}&limit=100`;
 
  fetch(url, { signal })
@@ -329,6 +327,47 @@ async function scrapePCHouse(searchText, socket_, signal) {
   });
 }
 
+async function scrapePickaboo(searchText, socket_, signal){
+  const query = searchText;
+  searchText = searchText.split(" ").join("+");
+  const url = `https://searchserverapi.com/getresults?api_key=6W7Z0N7U0T&q=${searchText}&queryCorrection=true&suggestions=true&maxResults=100&categories=true&restrictBy[visibility]=3|4&restrictBy[status]=1&facets=true&restrictBy[category_ids]=&startIndex=0`;
+  
+	fetch(url, { signal })
+  .then(res => res.json())
+  .then(data => {
+	  
+	 let items = [];
+	 
+	for(a_product of data.items){
+	  const title = a_product.title.trim();
+      const link = "https://www.pickaboo.com/product-detail/"+a_product.url_key.trim();
+      const image = a_product.image_link.trim();
+      const price = a_product.price.trim();
+
+      const description = [a_product.description.trim()];
+
+      items.push({
+        title,
+        link,
+        image,
+        price:price.split(".")[0].replace(/\D/g, ''),
+        description,
+		source:"pickaboo"
+      });
+	}
+	
+	socket_.emit("searchResults", {
+		query, items
+	});
+
+    return items;
+	
+  })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
+
 
 app.get("/", async (req, res) => {
 	const html = await renderView('index', {});
@@ -373,6 +412,7 @@ io.on("connection", (socket) => {
 		scrapeSmartTech(searchText, socket, signal);
 		scrapeRyans(searchText, socket, signal);
 		scrapePCHouse(searchText, socket, signal);
+		scrapePickaboo(searchText, socket, signal);
   });
 
   socket.on("disconnect", () => {
