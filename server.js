@@ -368,6 +368,88 @@ async function scrapePickaboo(searchText, socket_, signal){
   });
 }
 
+async function scrapeGadStyle(searchText, socket_, signal){
+  const query = searchText;
+  searchText = searchText.split(" ").join("+");
+  const url = `https://www.gadstyle.com/all-products/?s=${searchText}&post_type=product&per_page=50`;
+  
+  fetch(url, { signal })
+  .then(res => res.text())
+  .then(html => {
+	 const $ = cheerio.load(html);
+	 
+	 let items = [];
+	 
+	$('.wd-product').each((index, element) => {
+		const product = $(element);
+		const title = product.find('h3.wd-entities-title a').text().trim();
+		const price = product.find('span.price ins .woocommerce-Price-amount').text().trim() || 
+					  product.find('span.price .woocommerce-Price-amount').text().trim();
+		const image = product.find('.product-image-link img').attr('src');
+		const link = product.find('.product-image-link').attr('href');
+
+		items.push({
+			title,
+			price:price.split(".")[0].replace(/\D/g, ''),
+			image,
+			link,
+			description:[],
+			source:"gadstyle"
+		});
+	});
+		
+	socket_.emit("searchResults", {
+		query, items
+	});
+
+    return items;
+	
+  })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
+
+async function scrapeGadgetAndGear(searchText, socket_, signal){
+  const query = searchText;
+  searchText = searchText.split(" ").join("%20");
+  const url = `https://api-v2.gadgetandgear.com/api/v2/product/storefront/elastic-search?currentPage=1&perPage=100.&search=${searchText}&`;
+  
+  fetch(url, { signal })
+  .then(res => res.json())
+  .then(data => {
+	 
+	let items = [];
+	
+	for(a_product of data.data){
+		var an_item = {
+			title:a_product.name,
+			image:"https://assets.gadgetandgear.com/upload/"+a_product.thumbnail.split(",")[0],
+			link:"https://gadgetandgear.com/product/"+a_product.slug,
+			price:null,
+			description:[],
+			source:"gadget_and_gear"
+		};
+		
+		if(a_product.stockStatus.toUpperCase().indexOf("IN")!=-1){
+			an_item.price = a_product.discounted_price;
+		}
+		
+		items.push(an_item);
+	}
+	
+	socket_.emit("searchResults", {
+		query, items
+	});
+
+    return items;
+	
+  })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
+
 
 app.get("/", async (req, res) => {
 	const html = await renderView('index', {});
@@ -413,6 +495,8 @@ io.on("connection", (socket) => {
 		scrapeRyans(searchText, socket, signal);
 		scrapePCHouse(searchText, socket, signal);
 		scrapePickaboo(searchText, socket, signal);
+		scrapeGadStyle(searchText, socket, signal);
+		scrapeGadgetAndGear(searchText, socket, signal);
   });
 
   socket.on("disconnect", () => {
