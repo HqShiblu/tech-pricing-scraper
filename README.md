@@ -1,6 +1,12 @@
 # Tech Pricing Scraper
 Available at [Koyeb](https://pricingscraper.koyeb.app)
 
+This app brings on prices from tech product shops based on search query. It brings data from the websites, scrapes them and emits them to frontend with websocket.
+
+## Requirements
+- Node JS 18+
+- NPM 10+
+
 ## Getting started
 
 Setting up the project is simple.
