@@ -1,5 +1,6 @@
 # Tech Pricing Scraper
 Available at [Koyeb](https://pricingscraper.koyeb.app)
+(https://pricingscraper.koyeb.app)
 
 This app brings on prices from tech product shops based on search query. It brings data from the websites, scrapes them and emits them to frontend with websocket.
 
