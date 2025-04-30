@@ -1,819 +1,520 @@
-<!DOCTYPE html>
-<html lang="en">
-	<head>
-		<meta charset="utf-8"/>
-		<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-eval';style-src fonts.googleapis.com 'self' 'unsafe-inline';media-src *;img-src * 'self' data: https:;font-src 'self' fonts.gstatic.com fonts.googleapis.com; script-src  maps.googleapis.com 'self' 'unsafe-inline' 'unsafe-eval'"/>
-		<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no"/>
-		<title>Tech Pricing Comparison</title>
-		<link rel="preconnect" href="https://fonts.googleapis.com">
-		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-		<link href="https://fonts.googleapis.com/css2?family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap" rel="stylesheet">
-		<style>					
-			*{
-			  font-family: "Nunito", sans-serif;
-			  margin:0px;
-			  padding:0px;
-			}
-			body{
-				background:#f0f4ff;
-				margin: 0;
-			}
-			
-			.fixed-parent{
-				background:#f0f4ff;
-				padding-bottom:8px;
-				position:fixed;
-				top: 0;
-				left: 0;
-				right: 0;
-				display: flex;
-				justify-content: center;
-				align-items: center;
-				z-index:9999999999;
-			}
-			
-			.search-container {
-				width: 100%;
-				max-width: 400px;
-				text-align:center;
-				position:relative;
-			}
-			
-			h1{
-				font-size: 1.6em;
-				margin: 4px 0px;
-			}
+const express = require("express");
+const cheerio = require("cheerio");
+const path = require('path');
+const ejs = require('ejs');
+const http = require("http");
+const { Server } = require("socket.io");
 
-			.search-input {
-				width: 80%;
-				padding: 10px 20px;
-				padding-left: 45px;
-				border-radius: 30px;
-				border: 2px solid #ddd;
-				outline: none;
-				font-size: 16px;
-				transition: 0.3s;
-				box-sizing: border-box;
-			}
+require('dotenv').config();
 
-			.search-input:focus {
-				width:100%;
-				border-color: #3498db;
-			}
-			
-			.search-input:focus+.search-icon{
-				left: 12px;
-			}
+const app = express();
+const port = process.env.PORT||3000;
 
-			.search-icon {
-				color: #aaa;
-				font-size: 18px;
-				position: absolute;
-				bottom:-1px;
-				left: 52px;
-				transform: translateY(-40%);
-				transition:all 0.3s;
-			}
+const server = http.createServer(app);
+const io = new Server(server);
 
-			.search-input::placeholder {
-				color: #aaa;
-			}
-			
-			.container {
-				display: grid;
-				grid-template-columns: repeat(5, 1fr);
-				gap: 20px;
-				padding:0px 20px;
-				padding-top: 8px;
-				padding-bottom:40px;
-			}
-			
-			.product-card {
-				background-color: white;
-				border-radius: 8px;
-				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-				overflow: hidden;
-				text-align: center;
-				padding: 20px;
-				transition: transform 0.3s ease-in-out;
-				position:relative;
-			}
-			.product-card:hover {
-				transform: scale(1.05);
-			}
-			.product-image {
-				width: 85%;
-				height: auto;
-				margin-top:10px;
-				margin-left:7.5%;
-				border-radius: 8px;
-				object-fit: cover;
-				display:block;
-			}
-			.product-title {
-				color: #333;
-				font-size: 0.92em;
-				font-weight:bold;
-				text-align:center;
-				text-decoration: none;
-				margin: 10px 0;
-				transition: color 0.3s ease;
-			}
-			.product-title:hover {
-				color: #0b1b27;
-			}
-			
-			.extra-space{
-				height:10px;
-			}
-			
-			.product-description {
-				color: #666;
-				font-size: 0.9em;
-				padding:3px 0px;
-			}
-			
-			.product-price {
-				color: #0b1b27;
-				font-size: 1.1em;
-				font-weight: bold;
-			}
-			
-			.product-description{
-				text-align:left;
-			}
-			
-			.floating-image {
-				width: 70px;
-				border-radius: 10px 0px 10px 0px;
-				box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-				position:absolute;
-				top:0px;
-				left:0px;
-			}
-			
-			.loader {
-				position: fixed;
-				top: 50%;
-				left: 50%;
-				transform: translate(-50%, -50%);
-				width: 80px;
-				height: 80px;
-				border: 8px solid #f3f3f3;
-				border-top: 8px solid #3498db;
-				border-radius: 50%;
-				animation: spin 2s linear infinite;
-			}
-			
-			.summary-container{
-				width:100%;
-				background:#f0f4ff;
-				padding:0px 15px;
-				padding-top:6px;
-				justify-content: space-between;
-				box-sizing: border-box;
-				flex-wrap: wrap;
-				display: flex;
-				position:fixed;
-				z-index:9999999;
-			}
-			
-			.result-parent {
-				width: 30%;
-				margin-bottom:0px;
-				padding:0px;
-			}
+app.use(express.static(path.join(__dirname, 'public')));
 
-			.range-wrapper, .shop-parent, .sort-parent {
-				width: 20%;
-				margin-bottom:0px;
-				padding:0px;
-				opacity:0;
-			}
-			
-			.range-wrapper{
-				width: 30%;
-				flex-direction: column;
-			}
+function renderView(viewName, data) {
+    return new Promise((resolve, reject) => {
+        ejs.renderFile(path.join(__dirname, 'views', `${viewName}.ejs`), data, (err, str) => {
+            if (err) reject(err);
+            else resolve(str);
+        });
+    });
+}
 
-			.slider {
-			  height: 30px;
-			  margin-top: 24px;
-			  padding-right:10px;
-			  position: relative;
-			}
-			
-			.slider-track {
-			  position: absolute;
-			  height: 6px;
-			  top: 0;
-			  transform: translateY(-50%);
-			  background: #80a6c7;
-			  width: 90%;
-			  border-radius: 3px;
-			  z-index: 1;
-			}
+async function scrapeStartech(searchText, socket_, signal){
+  const query = searchText;
+  searchText = searchText.split(" ").join("+");
+  const url = `https://www.startech.com.bd/product/search?&search=${searchText}&limit=90`;
+  
+	fetch(url, { signal })
+  .then(res => res.text())
+  .then(html => {
+    const $ = cheerio.load(html);
+    const items = [];
 
-			input[type="range"] {
-			  position: absolute;
-			  width: 90%;
-			  pointer-events: none;
-			  -webkit-appearance: none;
-			  background: transparent;
-			  z-index:99999999999;
-			}
 
-			input[type="range"]::-webkit-slider-thumb {
-			  pointer-events: all;
-			  width: 20px;
-			  height: 20px;
-			  background: #80a6c7;
-			  border-radius: 50%;
-			  cursor: pointer;
-			  -webkit-appearance: none;
-			  margin-top: -9px;
-			  box-shadow: 0 0 2px #000;
-			}
+    $(".p-item").each((i, el) => {
+      const title = $(el).find(".p-item-name a").text().trim();
+      const link = $(el).find(".p-item-name a").attr("href");
+      const image = $(el).find(".p-item-img img").attr("src");
+      const price = $(el).find(".p-item-price .price-new").text().trim()||$(el).find(".p-item-price span").text().trim();
+	  let stock_out = false;
+	  if($(el).find(".p-item-price span")){
+		stock_out = ($(el).find(".p-item-price span").text().trim().toUpperCase().indexOf("OUT")!=-1);
+	  }
 
-			input[type="range"]::-moz-range-thumb {
-			  pointer-events: all;
-			  width: 20px;
-			  height: 20px;
-			  background: #80a6c7;
-			  border-radius: 50%;
-			  cursor: pointer;
-			  border: none;
-			}
+      const description = [];
+      $(el).find(".short-description li").each((i, li) => {
+        description.push($(li).text().trim());
+      });
 
-			 select {
-				width: 100%;
-				padding: 8px 20px;
-				font-size: 16px;
-				border-radius: 8px;
-				border: 2px solid #ddd;
-				appearance: none;
-				cursor: pointer;
-				transition: all 0.3s ease;
-			}
+      items.push({
+        title,
+        link,
+        image,
+        price:price.split(".")[0].replace(/\D/g, ''),
+        description,
+		stock_out,
+		source:"star_tech"
+      });
+    });
+	
+	socket_.emit("searchResults", {
+		query, items
+	});
 
-			select:focus {
-				outline: none;
-				border-color: #007BFF;
-				background-color: #fff;
-			}
+    return items;
+	
+  })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
 
-			select option {
-				padding: 10px;
-				background-color: #fff;
-			}
+async function scrapeTechland(searchText, socket_, signal) {
+	const query = searchText;
+	searchText = searchText.split(" ").join("+");
+	const url = `https://www.techlandbd.com/index.php?route=product/search&sort=p.sort_order&order=ASC&search=${searchText}&limit=100`;	
 
-			.shop-parent, .sort-parent {
-				padding-right:8px;
-				box-sizing:border-box;
-				flex-direction: column;
-				align-items: flex-start;
-				position: relative;
-			}
+  fetch(url, { signal })
+  .then(res => res.text())
+  .then(html => {
+    const $ = cheerio.load(html);
+    const items = [];
 
-			.shop-parent::after, .sort-parent::after {
-				content: '▼';
-				font-size: 14px;
-				color: #555;
-				position: absolute;
-				bottom:26px;
-				right: 18px;
-				pointer-events: none;
-			}
+    $(".product-layout").each((i, el) => {
 
-			select:hover {
-				border-color: #007BFF;
-			}
+      const title = $(el).find(".name a").text().trim();
+      const link = $(el).find(".name a").attr("href");
+      const image = $(el).find(".product-img img").attr("src");
+      const price = $(el).find(".price .price-normal").text().trim() || $(el).find(".price .price-new").text().trim();
+      
+	  const description = [];
+      $(el).find(".description").children("li").each((i, li) => {
+        description.push($(li).text().trim());
+      });
 
-			select:focus {
-				border-color: #007BFF;
-			}
+      items.push({
+        title,
+        link,
+        image,
+        price:price.split(".")[0].replace(/\D/g, ''),
+        description,
+		source:"tech_land"
+      });
+	  	  
+    });
+	
+	socket_.emit("searchResults", {
+		query, items
+	});
+	
+    return items;
 
-			select:focus + .shop-parent::after,
-			select:focus + .sort-parent::after {
-				color: #007BFF;
-			}
-			
-			option{
-				cursor:pointer;
-			}
-			
-			option[selected]{
-				color:rgb(13,40,70);
-			}
-			
-			.option-label{
-				font-size: 1.1em;
-				font-weight: bold;
-				margin-bottom: 5px;
-			}
-			
-			@keyframes fadeIn {
-				from { opacity: 0; }
-				to { opacity: 1; }
-			}
+   })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
 
-			.fade-in {
-			  opacity: 0;
-			  animation: fadeIn 0.6s ease forwards;
-			}
-			
-			.stock-out{
-				font-size: 0.9em;
-				margin-top: 4px;
-				color: #ff5252;
-			}
-			
-			@keyframes spin {
-				0% {
-					transform: translate(-50%, -50%) rotate(0deg);
-				}
-				100% {
-					transform: translate(-50%, -50%) rotate(360deg);
-				}
-			}
+async function scrapeRyans(searchText, socket_, signal) {
+	const query = searchText;
+	searchText = searchText.split(" ").join("%20");
+	const url = `https://www.ryans.com/search?q=${searchText}&limit=102`;
 
-			
-			@media (max-width: 1023px) {
-				.container {
-					grid-template-columns: repeat(3, 1fr);
-				}
-			}
-			
-			@media (max-width:991px) {
-				h1{
-					font-size: 1.2em;
-					margin: 2px 0px;
-				}
-				
-				.search-input:focus{
-					width:90%;
-				}
-				
-				.search-input:focus+.search-icon{
-					left: 34px;
-				}
-				
-				#result_no{
-					font-size: 1.3em;
-					text-align: center;
-				}
-				
-				.container {
-					grid-template-columns: repeat(2, 1fr);
-					padding-top: 20px;
-				}
-				
-				.search-input{
-					padding:6px 20px;
-					padding-left:45px;
-				}
-				
-				.search-icon {
-					transform: translateY(-35%);
-				}
-				
-				.summary-container{
-					padding-bottom: 8px;
-					box-shadow: 0px 2px 10px 0px #abc9e1;
-				}
-				
-				.result-label{
-					display:none;
-				}
-				
-				.result-parent {
-					margin-bottom: 0px;
-				}
-				
-				.slider{
-					height:20px;
-					margin-top:10px;
-				}
-				
-				.shop-parent, .sort-parent{
-					padding:0px 4px;
-				}
-				
-				.range-wrapper, .shop-parent, .sort-parent{
-					margin-bottom:0px;
-				}
-				
-				.result-parent, .range-wrapper, .shop-parent, .sort-parent {
-					width: 100%;
-					clear:both;
-				}
-				
-				.shop-parent, .sort-parent{
-					width:50%
-				}
-				
-				.shop-parent::after, .sort-parent::after {
-					bottom:12px;
-				}
-				
-				.product-title {
-					font-size: 0.94em;
-				}
-				
-				.product-description {
-					font-size: 0.9em;
-				}
-				
-				.product-price {
-					font-size: 1.12em;
-				}
-				
-			}
-			
-			
-		</style>
-	</head>
-	<body>
+  fetch(url, { signal })
+  .then(res => res.text())
+  .then(html => {
+    const $ = cheerio.load(html);
+    const items = [];
+
+    $('div.cus-col-1.cus-col-2.cus-col-3.cus-col-4.cus-col-5.category-single-product.mb-1').each((index, element) => {
+      const productUrl = $(element).find('a').attr('href');
+      const productImage = $(element).find('img').attr('src');
+      const productTitle = $(element).find('p.card-text.p-0.m-0.list-view-text a').text().trim();
+      const priceText = $(element).find('p.pr-text.cat-sp-text.pt-2.pb-1').text().trim().match(/[\d,]+/);
+	  const productPrice = priceText ? priceText[0].replace(/,/g, '') : "N/A";
+      const productDescription = [$(element).find('p.card-text.p-0.m-0.grid-view-text').text().trim() || productTitle];
+	  const stock_out = ($(element).find(".container__wrapper4").text().trim().toUpperCase().indexOf("OUT")!=-1);
+
+      items.push({
+        title: productTitle,
+        link: productUrl,
+        image: productImage,
+        price: productPrice.split(".")[0].replace(/\D/g, ''),
+        description: productDescription,
+		stock_out,
+		source:"ryans"
+      });
+    });
+	
+	socket_.emit("searchResults", {
+		query, items
+	});
+
+    return items;
+
+  })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
+
+async function scrapeComputerVillage(searchText, socket_, signal) {
+	const query = searchText;
+	searchText = searchText.split(" ").join("%20");
+	const url = `https://www.computervillage.com.bd/index.php?route=product/search&search=${searchText}&limit=100`;
+
+ fetch(url, { signal })
+  .then(res => res.text())
+  .then(html => {
+    const $ = cheerio.load(html);
+    const items = [];
+	
+	$('.product-layout').each((i, el) => {
+      const title = $(el).find('.caption .name a').text().trim();
+      const link = $(el).find('.caption .name a').attr('href')?.trim();
+      const image = $(el).find('.product-thumb .image a img').attr('src')?.trim();
+      const priceText = $(el).find('.price .price-normal').text().trim();
+      const priceMatch = priceText.match(/[\d,]+/);
+	  let stock_out = false;
+      let price = priceMatch ? priceMatch[0].replace(/,/g, '') : null;
+	  const descriptionItems = [];
+      $(el).find('.description li ul li').each((i, li) => {
+        const text = $(li).text().trim();
+        if (text) descriptionItems.push(text);
+      });
+	  
+	  if(!price && price!=0){
+		  price = "";
+	  }
+	  
+	  stock_out = (price==0 || price=="");
+	
+      items.push({ title, link, image, price:price.split(".")[0].replace(/\D/g, ''), description:descriptionItems, stock_out, source:"village" });
+    });
+	
+	socket_.emit("searchResults", {
+		query, items
+	});
+
+    return items;
+
+   })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
+
+async function scrapeSmartTech(searchText, socket_, signal) {
+	const query = searchText;
+	searchText = searchText.split(" ").join("+");
+	const url = `https://smartbd.com/?product_cat=&s=${searchText}&post_type=product`;
+
+  fetch(url, {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+		body: {
+			"s":searchText,
+			"post_type":"product",
+			"product_cat":"",
+			"ppp":-1
+		},
+		signal: signal
+	})
+  .then(res => res.text())
+  .then(html => {
+    const $ = cheerio.load(html);
+    const items = [];
+	
+	$('.product-block.grid').each((i, el) => {
+		const title = $(el).find('h3.name a').text().trim();
+		const price = $(el).find('.price').text().replace(/\s+/g, ' ').trim().split(".")[0];
+		const link = $(el).find('h3.name a').attr('href');
+		const image = $(el).find('figure.image img').attr('data-src');
 		
-		<div class="fixed-parent">
-			<div class="search-container">
-				<h1>Compare Prices</h1>
-				<input type="text" class="search-input" placeholder="Search..." />
-				<span class="search-icon">&#128269;</span>
-			</div>
-		</div>
+      items.push({ title, link, image, price:price.replace(/\D/g, ''), description:"", source:"smartbd" });
+    });
+	
+	socket_.emit("searchResults", {
+		query, items
+	});
+
+    return items;
+  
+   })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
+
+async function scrapeCompterMania(searchText, socket_, signal){
+  const query = searchText;
+  searchText = searchText.split(" ").join("+");
+  const url = `https://computermania.com.bd/shop/page/1/?s=${searchText}&post_type=product&per_page=100`;
+
+  fetch(url, { signal })
+  .then(res => res.text())
+  .then(html => {
+    const $ = cheerio.load(html);
+    const items = [];
+	
+	$('.product-wrapper').each((index, element) => {
+	  const product = $(element);
+	  const title = product.find('.wd-entities-title a').text().trim();
+	  const link = product.find('.product-image-link').attr('href');
+	  const image = product.find('.product-image-link img').attr('src');
+	  let price = product.find('.woocommerce-Price-amount.amount').text().replace(/\s+/g, ' ').trim();
+	  
+	  if(!price){
+		  price = "";
+	  }
+	  
+	  price = price.split("৳")[0].split(",").join("")
+	  
+	  items.push({
+        title,
+        link,
+        image,
+        price:price.replace(/\D/g, ''),
+        description:"",
+		source:"computer_mania"
+      });
+	});
+	
+	socket_.emit("searchResults", {
+		query, items
+	});
+
+    return items;
+
+   })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
+
+async function scrapePCHouse(searchText, socket_, signal) {
+	const query = searchText;
+	searchText = searchText.split(" ").join("+");
+	const url = `https://www.pchouse.com.bd/index.php?route=product/search&search=${searchText}&limit=100`;	
+
+  fetch(url, { signal })
+  .then(res => res.text())
+  .then(html => {
+    const $ = cheerio.load(html);
+    const items = [];
+
+    $(".product-layout").each((i, el) => {
+      const title = $(el).find(".name a").text().trim();
+      const link = $(el).find(".name a").attr("href");
+      const image = $(el).find(".product-img img").attr("src");
+      const price = $(el).find(".price .price-normal").text().trim() || $(el).find(".price .price-new").text().trim();
+      const description = [$(el).find(".description").text().trim()];
+	  const stock_out = ($(el).find(".buttons-wrapper .button-group").text().trim().toUpperCase().indexOf("OUT")!=-1);
+
+      items.push({
+        title,
+        link,
+        image,
+        price:price.split(".")[0].replace(/\D/g, ''),
+        description,
+		stock_out,
+		source:"pc_house"
+      });
+    });
+	
+	socket_.emit("searchResults", {
+		query, items
+	});
+	
+    return items;
+	
+	})
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
+
+async function scrapePickaboo(searchText, socket_, signal){
+  const query = searchText;
+  searchText = searchText.split(" ").join("+");
+  const url = `https://searchserverapi.com/getresults?api_key=6W7Z0N7U0T&q=${searchText}&queryCorrection=true&suggestions=true&maxResults=100&categories=true&restrictBy[visibility]=3|4&restrictBy[status]=1&facets=true&restrictBy[category_ids]=&startIndex=0`;
+  
+	fetch(url, { signal })
+  .then(res => res.json())
+  .then(data => {
+	  
+	 let items = [];
+	 
+	for(a_product of data.items){
+	  const title = a_product.title.trim();
+      const link = "https://www.pickaboo.com/product-detail/"+a_product.url_key.trim();
+      const image = a_product.image_link.trim();
+      const price = a_product.price.trim();
+
+      const description = [a_product.description.trim()];
+
+      items.push({
+        title,
+        link,
+        image,
+        price:price.split(".")[0].replace(/\D/g, ''),
+        description,
+		source:"pickaboo"
+      });
+	}
+	
+	socket_.emit("searchResults", {
+		query, items
+	});
+
+    return items;
+	
+  })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
+
+async function scrapeGadStyle(searchText, socket_, signal){
+  const query = searchText;
+  searchText = searchText.split(" ").join("+");
+  const url = `https://www.gadstyle.com/all-products/?s=${searchText}&post_type=product&per_page=50`;
+  
+  fetch(url, { signal })
+  .then(res => res.text())
+  .then(html => {
+	 const $ = cheerio.load(html);
+	 
+	 let items = [];
+	 
+	$('.wd-product').each((index, element) => {
+		const product = $(element);
+		const title = product.find('h3.wd-entities-title a').text().trim();
+		const price = product.find('span.price ins .woocommerce-Price-amount').text().trim() || 
+					  product.find('span.price .woocommerce-Price-amount').text().trim();
+		const image = product.find('.product-image-link img').attr('src');
+		const link = product.find('.product-image-link').attr('href');
+
+		items.push({
+			title,
+			price:price.split(".")[0].replace(/\D/g, ''),
+			image,
+			link,
+			description:[],
+			source:"gadstyle"
+		});
+	});
 		
-		<div class="summary-container">
-			<div class="result-parent">
-				 <label class="option-label result-label">&nbsp;</label>
-				 <h2 id="result_no">&nbsp;</h2>
-			</div>
-			<div class="range-wrapper">
-			  <h3><span id="range-min">0</span> - <span id="range-max">0</span></h3>
-			  <div class="slider">
-				<div class="slider-track"></div>
-				<input type="range" id="min" min="0" max="1000" value="0" step="500"/>
-				<input type="range" id="max" min="0" max="1000" value="1000" step="500"/>
-			  </div>
-			</div>
-			<div class="shop-parent">
-				<label class="option-label">Filter by Shop</label>
-				<select id="shop-option">
-					<option value="ALL" selected>ALL</option>
-					<option value="star_tech">Star Tech Ltd.</option>
-					<option value="village">Computer Village</option>
-					<option value="ryans">Ryans Computers</option>
-					<option value="smartbd">Smart Technologies (BD) Ltd.</option>
-					<option value="computer_mania">Computer Mania BD</option>
-					<option value="tech_land">Tech Land BD</option>
-					<option value="pc_house">PC House BD</option>
-					<option value="pickaboo">Pickaboo</option>
-					<option value="gadstyle">GadStyle BD</option>
-					<option value="gadget_and_gear">Gadget and Gear</option>
-				</select>
-			</div>
-			<div class="sort-parent">
-				<label class="option-label">Sort by</label>
-				<select id="sort-option">
-					<option value="default" selected>Default</option>
-					<option value="namea">Name Alphabetically</option>
-					<option value="pricea">Price Low to High</option>
-					<option value="priced">Price High to Low</option>
-				</select>
-			</div>
-		</div>
+	socket_.emit("searchResults", {
+		query, items
+	});
+
+    return items;
+	
+  })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
+
+async function scrapeGadgetAndGear(searchText, socket_, signal){
+  const query = searchText;
+  searchText = searchText.split(" ").join("%20");
+  const url = `https://api-v2.gadgetandgear.com/api/v2/product/storefront/elastic-search?currentPage=1&perPage=100.&search=${searchText}&`;
+  
+  fetch(url, { signal })
+  .then(res => res.json())
+  .then(data => {
+	 
+	let items = [];
+	
+	for(a_product of data.data){
+		var an_item = {
+			title:a_product.name,
+			image:"https://assets.gadgetandgear.com/upload/"+a_product.thumbnail.split(",")[0],
+			link:"https://gadgetandgear.com/product/"+a_product.slug,
+			price:a_product.discounted_price,
+			stock_out:(a_product.stockQuantity==0),
+			description:[],
+			source:"gadget_and_gear"
+		};
 		
-		<div class="container">
-			 
-		</div>
+		items.push(an_item);
+	}
 		
-		<script src="/js/socket.io.min.js"></script>
-		<script>
-			
-			let container_ = null;
-			let summary_container_ = null;			
-			let debounceTimeout = null;
-			let priceTimeout = null;
-			let old_query = "";
-			let product_items = [];
-			let _sortable_items = [];
-			
-			const minSlider = document.getElementById("min");
-			const maxSlider = document.getElementById("max");
-			const minOutput = document.getElementById("range-min");
-			const maxOutput = document.getElementById("range-max");
-			const sliderTrack = document.querySelector(".slider-track");
-			const minGap = 500;
-			let sliderMaxValue = 0;
-			
-			const socket = io();
-			
-			const sources = {
-				"star_tech":"Star Tech Ltd.",
-				"tech_land":"Tech Land BD",
-				"ryans":"Ryans Computers",
-				"village":"Computer Village",
-				"smartbd":"Smart Technologies (BD) Ltd.",
-				"computer_mania":"Computer Mania BD",
-				"pc_house":"PC House BD",
-				"pickaboo":"Pickaboo",
-				"gadstyle":"GadStyle BD",
-				"gadget_and_gear":"Gadget and Gear"
-			};
-			
-			function formatPrice(price){
-				if(price.toString()=="NaN" || isNaN(price)){
-					return "N/A";
-				}
-				if(price.toString().length<=3){
-					return price+"৳";
-				}
-				let numStr = price.toString();
-				let lastThree = numStr.slice(-3);
-				let remaining = numStr.slice(0, -3);
-				let formattedRemaining = remaining.replace(/\B(?=(\d{2})+(?!\d))/g, ',');
-				return formattedRemaining + ',' + lastThree+"৳";
-			}
-			
-			function setProductHtml(product_items_, addDelay){
-				let productHtml = "";
-				let delay = 0;
-				let cardCounter = 0;
-				let fadeInClass = "";
-				
-				for(a_product of product_items_){
-					if(addDelay && cardCounter<20){
-						fadeInClass = "fade-in";
-					}else{
-						fadeInClass = "";
-					}
-					productHtml +=
-					`<div class="product-card ${fadeInClass}" style="animation-delay:${delay}s;" data-source="${a_product.source}">
-						<img src="/logo/${a_product.source}.jpg" class="floating-image" title="${sources[a_product.source]}">
-						<img src="${a_product.image}" alt="${a_product.title}" class="product-image">
-						<a href="${a_product.link}" class="product-title" target="_blank">${a_product.title}</a>
-						<p class="extra-space"></p>`;
-						
-						for(a_description of a_product.description){
-							productHtml += 
-							`<p class="product-description">${a_description}</p>`;
-						}
-						
-						if(a_product.price!=null && a_product.price!=0 && a_product.price!=undefined){
-							try{
-								a_product.price = a_product.price.toString().split(",").join("").split("৳").join("").trim();
-								productHtml += `<p class="product-price">${formatPrice(a_product.price)}</p>`;
-							}catch(e){
-								a_product.price = "N/A";
-								productHtml += `<p class="product-price">N/A</p>`;
-							}
-						}else{
-							a_product.price = "N/A";
-							productHtml += `<p class="product-price">N/A</p>`;
-						}
-						
-						if(a_product.stock_out){
-							productHtml += `<p class="stock-out">Stock Out</p>`;
-						}
-						
-						productHtml += `</div>`;
-						
-					delay += 0.1;
-					cardCounter++;
-				}
-				container_.innerHTML = productHtml;
-			}
-			
-			
-			function processQuery(event_){
-				const query__ = event_.target.value.toLowerCase();
-				if (old_query.length!=0 && query__.trim()==old_query) {
-					return;
-				}
-				
-				container_.innerHTML = ``;
-				document.querySelector("#result_no").innerHTML = "";
-				document.querySelector(".range-wrapper").style.display = "none";
-				document.querySelector(".shop-parent").style.display = "none";
-				document.querySelector(".sort-parent").style.display = "none";
-				if(debounceTimeout!=null){
-					clearTimeout(debounceTimeout);
-				}
-				
-				if (!query__.trim()) {
-					return;
-				}
-				
-				container_.innerHTML = `<div class="loader"></div>`;
-				
-				document.getElementById('shop-option').value = "ALL";
-				document.getElementById('sort-option').value = "default";
-				
-				debounceTimeout = setTimeout(() => {
-					old_query = query__;
-					
-					product_items = [];
-					
-					socket.emit("search", query__);
-					
-				}, 500);
-			}
-			
-			document.querySelector('.search-input').addEventListener('keyup', (event)=>{
-				processQuery(event);
-			});
-			
-			document.querySelector('.search-input').addEventListener('change', (event)=>{
-				processQuery(event);
-			});
-			
-			document.querySelector('.search-input').addEventListener('paste', (event)=>{
-				setTimeout(function(){
-					processQuery(event);
-				}, 50);
-			});
-			
-			socket.on("searchResults", (result) => {
-				
-				if(result.query==old_query && result.items.length!=0){
-					
-					product_items.push(...result.items);
-					
-					if(document.getElementById("shop-option").value!="ALL" || document.getElementById("sort-option").value!="default"){
-						return;
-					}
-					
-					setProductHtml(product_items);
-					
-					sliderMaxValue = 0;
-					
-					for(a_product of product_items){
-						if(!isNaN(parseFloat(a_product.price)) && parseFloat(a_product.price)>sliderMaxValue && parseFloat(a_product.price)<2000000){
-							sliderMaxValue = a_product.price;
-						}
-					}
-					
-					minOutput.innerText = formatPrice(parseFloat(0));
-					maxOutput.innerText = formatPrice(parseFloat(sliderMaxValue));
-					
-					minSlider.min = 0;
-					minSlider.max = sliderMaxValue;
-					minSlider.value = 0;
-					
-					maxSlider.min = 0;
-					maxSlider.max = sliderMaxValue;
-					maxSlider.value = sliderMaxValue;
-					
-					fillTrack();
-					
-					document.querySelector("#result_no").innerHTML = product_items.length+" results";
-					if(product_items.length>0){
-						document.querySelector(".range-wrapper").style.display = "flex";
-						document.querySelector(".shop-parent").style.display = "flex";
-						document.querySelector(".sort-parent").style.display = "flex";
-					}
-				}
-			});
-			
-			window.onload = function() {
-			  var fixedParentHeight = document.querySelector('.fixed-parent').offsetHeight-8;
-			  container_ = document.querySelector('.container');
-			  summary_container_ = document.querySelector('.summary-container');
-			  summary_container_.style.top = fixedParentHeight+ "px";
-			  container_.style.marginTop = (fixedParentHeight+summary_container_.offsetHeight)+"px";
-			  document.querySelector('.range-wrapper').style.opacity = 1;
-			  document.querySelector('.range-wrapper').style.display = "none";
-			  document.querySelector('.shop-parent').style.opacity = 1;
-			  document.querySelector('.shop-parent').style.display = "none";
-			  document.querySelector('.sort-parent').style.opacity = 1;
-			  document.querySelector('.sort-parent').style.display = "none";
-			};
-			
-			document.getElementById('shop-option').addEventListener('change', function(event) {
-				const selected_shop = event.target.value.trim();
-				_sortable_items = [...product_items];
-				
-				if(!(minSlider.value==0 && maxSlider.value==sliderMaxValue)){
-					_sortable_items = _sortable_items.filter(product=>(!isNaN(parseFloat(product.price)) &&  parseFloat(product.price)>=minSlider.value && parseFloat(product.price)<=maxSlider.value));
-				}
-				
-				if (event.target.value != "ALL"){
-					_sortable_items = _sortable_items.filter(product=>product.source==selected_shop);
-				}
-				setProductHtml(_sortable_items, true);
-				
-				document.querySelector("#result_no").innerHTML = (_sortable_items.length)+" result"+((_sortable_items.length==1)?"":"s");
-				document.getElementById('sort-option').value = "default";
-				
-				window.scrollTo(0, 0);
-			});
-			
-			document.getElementById('sort-option').addEventListener('change', function(event) {
-				const selected_sort = event.target.value.trim();
-				_sortable_items = [...product_items];
-				const shop_option_ = document.getElementById('shop-option').value;
-				
-				if(!(minSlider.value==0 && maxSlider.value==sliderMaxValue)){
-					_sortable_items = _sortable_items.filter(product=>(!isNaN(parseFloat(product.price)) &&  parseFloat(product.price)>=minSlider.value && parseFloat(product.price)<=maxSlider.value));
-				}
-				
-				if(shop_option_!="ALL"){
-					_sortable_items = _sortable_items.filter(product=>product.source==shop_option_);
-				}
-				switch(selected_sort){
-					case "namea":
-								_sortable_items.sort((a, b) => a.title.localeCompare(b.title));
-								break;									
-					case "pricea":
-								_sortable_items.sort((a, b) => {
-									const priceA = parseFloat(a.price);
-									const priceB = parseFloat(b.price);
+	socket_.emit("searchResults", {
+		query, items
+	});
 
-									if (isNaN(priceA) && isNaN(priceB)){
-										return 0;
-									}
-									if (isNaN(priceA)){
-										return 1;
-									}
-									if (isNaN(priceB)){
-										return -1;
-									}
+    return items;
+	
+  })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
 
-									return priceA - priceB;
-								});
-								break;
-					case "priced":
-								_sortable_items.sort((a, b) => {
-									const priceA = parseFloat(a.price);
-									const priceB = parseFloat(b.price);
 
-									if (isNaN(priceA) && isNaN(priceB)){
-										 return 0;
-									}
-									if (isNaN(priceA)){
-										return 1;
-									}
-									if (isNaN(priceB)){
-										return -1;
-									}
+app.get("/", async (req, res) => {
+	const html = await renderView('index', {});
+	res.send(html);
+});
 
-									return priceB - priceA;
-								});
-								break;
-					case "default":
-					default:
-								break;
-				}
-				
-				setProductHtml(_sortable_items, true);
-				document.querySelector("#result_no").innerHTML = (_sortable_items.length)+" result"+((_sortable_items.length==1)?"":"s");
-				
-				window.scrollTo(0, 0);
-			});
 
-			function updateRange() {
-				if(priceTimeout!=null){
-					clearTimeout(priceTimeout);
-				}
-				
-				let minVal = parseInt(minSlider.value);
-				let maxVal = parseInt(maxSlider.value);
+app.get("/get-pricing-data", async (req, res) => {
+  const searchText = req.query.search || '';
+  if (!searchText) {
+    return res.status(400).json({ error: "Please provide a search term" });
+  }
+        
+  const [startechItems, techlandItems, ryansItems, villageitems, smarttechitems, computermaniaItems] = await Promise.all([
+	scrapeStartech(searchText),
+	scrapeComputerVillage(searchText),
+	scrapeTechland(searchText),
+	scrapeCompterMania(searchText),
+	scrapeSmartTech(searchText),
+	scrapeRyans(searchText)
+]);
 
-				if ((maxVal - minVal) < minGap) {
-					if (event.target.id === "min") {
-						minSlider.value = maxVal - minGap;
-					} else {
-						maxSlider.value = minVal + minGap;
-					}
-					minVal = parseInt(minSlider.value);
-					maxVal = parseInt(maxSlider.value);
-				}
-			  
-				minOutput.textContent = formatPrice(minVal);
-				maxOutput.textContent = formatPrice(maxVal);
-				
-				fillTrack();
-				
-				priceTimeout = setTimeout(() => {
-					document.getElementById('sort-option').dispatchEvent(new Event("change"));
-				}, 400);			  
-			}
 
-			function fillTrack() {
-			  const minPercent = (minSlider.value / sliderMaxValue) * 100;
-			  const maxPercent = (maxSlider.value / sliderMaxValue) * 100;
-			  sliderTrack.style.background = `linear-gradient(to right, 
-				#ddd ${minPercent}%,
-				#80a6c7 ${minPercent}%,
-				#80a6c7 ${maxPercent}%,
-				#ddd ${maxPercent}%)`;
-			}
+const combinedItems = [...startechItems, ...techlandItems, ...ryansItems,
+						...villageitems, ...smarttechitems, ...computermaniaItems];
+res.json({
+	items:combinedItems
+});
 
-			minSlider.addEventListener("input", updateRange);
-			maxSlider.addEventListener("input", updateRange);
+});
 
-			
-			
-		</script>
-	</body>
-</html>
+io.on("connection", (socket) => {
+	
+	const controller = new AbortController();
+	const signal = controller.signal;
+	
+	socket.on("search", (searchText) => {
+		scrapeStartech(searchText, socket, signal);
+		scrapeComputerVillage(searchText, socket, signal);
+		scrapeTechland(searchText, socket, signal);
+		scrapeCompterMania(searchText, socket, signal);
+		scrapeSmartTech(searchText, socket, signal);
+		scrapeRyans(searchText, socket, signal);
+		scrapePCHouse(searchText, socket, signal);
+		scrapePickaboo(searchText, socket, signal);
+		scrapeGadStyle(searchText, socket, signal);
+		scrapeGadgetAndGear(searchText, socket, signal);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+	controller.abort(); 
+  });
+});
+
+
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+});
