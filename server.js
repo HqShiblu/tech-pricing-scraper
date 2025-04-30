@@ -83,7 +83,9 @@
 				display: grid;
 				grid-template-columns: repeat(5, 1fr);
 				gap: 20px;
-				padding: 20px;
+				padding:0px 20px;
+				padding-top: 8px;
+				padding-bottom:40px;
 			}
 			
 			.product-card {
@@ -100,18 +102,21 @@
 				transform: scale(1.05);
 			}
 			.product-image {
-				width: 100%;
+				width: 85%;
 				height: auto;
 				margin-top:10px;
+				margin-left:7.5%;
 				border-radius: 8px;
 				object-fit: cover;
+				display:block;
 			}
 			.product-title {
-				font-size: 1em;
-				margin: 10px 0;
 				color: #333;
-				text-decoration: none;
+				font-size: 0.92em;
 				font-weight:bold;
+				text-align:center;
+				text-decoration: none;
+				margin: 10px 0;
 				transition: color 0.3s ease;
 			}
 			.product-title:hover {
@@ -124,17 +129,17 @@
 			
 			.product-description {
 				color: #666;
-				font-size: 1em;
+				font-size: 0.9em;
 				padding:3px 0px;
 			}
 			
 			.product-price {
 				color: #0b1b27;
-				font-size: 1.2em;
+				font-size: 1.1em;
 				font-weight: bold;
 			}
 			
-			.product-title, .product-description{
+			.product-description{
 				text-align:left;
 			}
 			
@@ -164,7 +169,7 @@
 				width:100%;
 				background:#f0f4ff;
 				padding:0px 15px;
-				padding-top:10px;
+				padding-top:6px;
 				justify-content: space-between;
 				box-sizing: border-box;
 				flex-wrap: wrap;
@@ -175,13 +180,13 @@
 			
 			.result-parent {
 				width: 30%;
-				margin-bottom:10px;
+				margin-bottom:0px;
 				padding:0px;
 			}
 
 			.range-wrapper, .shop-parent, .sort-parent {
 				width: 20%;
-				margin-bottom:10px;
+				margin-bottom:0px;
 				padding:0px;
 				opacity:0;
 			}
@@ -317,6 +322,12 @@
 			  animation: fadeIn 0.6s ease forwards;
 			}
 			
+			.stock-out{
+				font-size: 0.9em;
+				margin-top: 4px;
+				color: #ff5252;
+			}
+			
 			@keyframes spin {
 				0% {
 					transform: translate(-50%, -50%) rotate(0deg);
@@ -350,11 +361,11 @@
 				#result_no{
 					font-size: 1.3em;
 					text-align: center;
-					margin-top:-8px;
 				}
 				
 				.container {
 					grid-template-columns: repeat(2, 1fr);
+					padding-top: 20px;
 				}
 				
 				.search-input{
@@ -510,7 +521,7 @@
 				"gadget_and_gear":"Gadget and Gear"
 			};
 			
-			function formatPrice(price) {
+			function formatPrice(price){
 				if(price.toString()=="NaN" || isNaN(price)){
 					return "N/A";
 				}
@@ -546,20 +557,27 @@
 						for(a_description of a_product.description){
 							productHtml += 
 							`<p class="product-description">${a_description}</p>`;
-						}										
+						}
 						
 						if(a_product.price!=null && a_product.price!=0 && a_product.price!=undefined){
 							try{
-								a_product.price = a_product.price.split(",").join("").split("৳").join("").trim();
-								productHtml += `<p class="product-price">${formatPrice(a_product.price)}</p></div>`;
+								a_product.price = a_product.price.toString().split(",").join("").split("৳").join("").trim();
+								productHtml += `<p class="product-price">${formatPrice(a_product.price)}</p>`;
 							}catch(e){
 								a_product.price = "N/A";
-								productHtml += `<p class="product-price">N/A</p></div>`;
+								productHtml += `<p class="product-price">N/A</p>`;
 							}
 						}else{
 							a_product.price = "N/A";
-							productHtml += `<p class="product-price">N/A</p></div>`;
+							productHtml += `<p class="product-price">N/A</p>`;
 						}
+						
+						if(a_product.stock_out){
+							productHtml += `<p class="stock-out">Stock Out</p>`;
+						}
+						
+						productHtml += `</div>`;
+						
 					delay += 0.1;
 					cardCounter++;
 				}
@@ -620,6 +638,10 @@
 				if(result.query==old_query && result.items.length!=0){
 					
 					product_items.push(...result.items);
+					
+					if(document.getElementById("shop-option").value!="ALL" || document.getElementById("sort-option").value!="default"){
+						return;
+					}
 					
 					setProductHtml(product_items);
 					
