@@ -459,6 +459,58 @@ async function scrapeGadgetAndGear(searchText, socket_, signal){
   });
 }
 
+async function scrapeTVHut(searchText, socket_, signal){
+  const query = searchText;
+  searchText = searchText.split(" ").join("%20");
+  const url = `https://www.tvhut.com.bd/index.php?route=product/search&search=${searchText}&description=true&limit=100`;
+  
+  fetch(url, { signal })
+  .then(res => res.text())
+  .then(html => {
+	 const $ = cheerio.load(html);
+	 
+	 let items = [];
+	 
+	$('.product-layout').each((index, element) => {
+	  const title = $(element).find('.caption .name a').text().trim();
+	  const link = $(element).find('.caption .name a').attr('href');
+	  const image = $(element).find('.product-img img.img-first').attr('src');
+	  let stock_out = ($(element).find('.stat-1').text().toUpperCase().indexOf("OUT")!=-1)||false;
+	  
+	  if($(element).find('.stat-1').text().toUpperCase().indexOf("DISCONTINUE")!=-1){
+		  stock_out = "true|Discontinued";
+	  }
+	  
+	  const description = [];
+	  $(element).find('.module-features-description li').each((i, li) => {
+		description.push($(li).text().trim());
+	  });
+
+	  const price = $(element).find('.price .price-new').text().trim()||$(element).find('.price .price-normal').text().trim();
+
+	  items.push({
+		title,
+		link,
+		image,
+		price:price.split(".")[0].replace(/\D/g, ''),
+		description,
+		stock_out,
+		source:"tvhut"
+	  });
+	});
+		
+	socket_.emit("searchResults", {
+		query, items
+	});
+
+    return items;
+	
+  })
+  .catch(err => {
+    console.error("Error fetching or parsing:", err);
+  });
+}
+
 
 app.get("/", async (req, res) => {
 	const html = await renderView('index', {});
@@ -506,6 +558,7 @@ io.on("connection", (socket) => {
 		scrapePickaboo(searchText, socket, signal);
 		scrapeGadStyle(searchText, socket, signal);
 		scrapeGadgetAndGear(searchText, socket, signal);
+		scrapeTVHut(searchText, socket, signal);
   });
 
   socket.on("disconnect", () => {
