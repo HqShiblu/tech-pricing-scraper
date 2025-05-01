@@ -325,7 +325,7 @@
 			.stock-out{
 				font-size: 0.9em;
 				margin-top: 4px;
-				color: #ff5252;
+				color: #ff1919;
 			}
 			
 			@keyframes spin {
@@ -470,6 +470,7 @@
 					<option value="pickaboo">Pickaboo</option>
 					<option value="gadstyle">GadStyle BD</option>
 					<option value="gadget_and_gear">Gadget and Gear</option>
+					<option value="tvhut">TV Hut</option>
 				</select>
 			</div>
 			<div class="sort-parent">
@@ -518,7 +519,8 @@
 				"pc_house":"PC House BD",
 				"pickaboo":"Pickaboo",
 				"gadstyle":"GadStyle BD",
-				"gadget_and_gear":"Gadget and Gear"
+				"gadget_and_gear":"Gadget and Gear",
+				"tvhut":"TV Hut"
 			};
 			
 			function formatPrice(price){
@@ -573,7 +575,11 @@
 						}
 						
 						if(a_product.stock_out){
-							productHtml += `<p class="stock-out">Stock Out</p>`;
+							if(a_product.stock_out.toString().split("|").length>1){
+								productHtml += `<p class="stock-out">${a_product.stock_out.split("|")[1]}</p>`;
+							}else{
+								productHtml += `<p class="stock-out">Stock Out</p>`;
+							}
 						}
 						
 						productHtml += `</div>`;
