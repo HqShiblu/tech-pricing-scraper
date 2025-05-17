@@ -325,7 +325,7 @@
 			.stock-out{
 				font-size: 0.9em;
 				margin-top: 4px;
-				color: #ff1919;
+				color: #ff5252;
 			}
 			
 			@keyframes spin {
@@ -437,7 +437,7 @@
 		
 		<div class="fixed-parent">
 			<div class="search-container">
-				<h1>Compare Tech Prices</h1>
+				<h1>Compare Prices</h1>
 				<input type="text" class="search-input" placeholder="Search..." />
 				<span class="search-icon">&#128269;</span>
 			</div>
@@ -470,7 +470,6 @@
 					<option value="pickaboo">Pickaboo</option>
 					<option value="gadstyle">GadStyle BD</option>
 					<option value="gadget_and_gear">Gadget and Gear</option>
-					<option value="tvhut">TV Hut</option>
 				</select>
 			</div>
 			<div class="sort-parent">
@@ -519,8 +518,7 @@
 				"pc_house":"PC House BD",
 				"pickaboo":"Pickaboo",
 				"gadstyle":"GadStyle BD",
-				"gadget_and_gear":"Gadget and Gear",
-				"tvhut":"TV Hut"
+				"gadget_and_gear":"Gadget and Gear"
 			};
 			
 			function formatPrice(price){
@@ -575,11 +573,7 @@
 						}
 						
 						if(a_product.stock_out){
-							if(a_product.stock_out.toString().split("|").length>1){
-								productHtml += `<p class="stock-out">${a_product.stock_out.split("|")[1]}</p>`;
-							}else{
-								productHtml += `<p class="stock-out">Stock Out</p>`;
-							}
+							productHtml += `<p class="stock-out">Stock Out</p>`;
 						}
 						
 						productHtml += `</div>`;
@@ -591,8 +585,13 @@
 			}
 			
 			
-			function processQuery(event_){
-				const query__ = event_.target.value.toLowerCase();
+			function processQuery(event_, searchQuery){
+				let query__ = "";
+				if(searchQuery){
+					query__ = searchQuery;
+				}else{
+					query__ = event_.target.value.toLowerCase()
+				}
 				if (old_query.length!=0 && query__.trim()==old_query) {
 					return;
 				}
@@ -693,6 +692,21 @@
 			  document.querySelector('.shop-parent').style.display = "none";
 			  document.querySelector('.sort-parent').style.opacity = 1;
 			  document.querySelector('.sort-parent').style.display = "none";
+			  
+			  let searchQuery = new URLSearchParams(window.location.search).get('search');
+			
+				if(searchQuery){
+					searchQuery = searchQuery.trim();
+					document.querySelector('.search-input').value = searchQuery;
+					const event = new KeyboardEvent("keyup", {
+					  bubbles: true,
+					  cancelable: true
+					});
+					document.querySelector('.search-input').dispatchEvent(event);
+					processQuery("", searchQuery);
+				}
+				
+			  
 			};
 			
 			document.getElementById('shop-option').addEventListener('change', function(event) {
